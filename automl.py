@@ -9,7 +9,6 @@ Optimizado para Google Colab
 # 1. INSTALACIÓN Y CONFIGURACIÓN DE DEPENDENCIAS
 # ============================================================================
 
-
 import nltk
 import pandas as pd
 import numpy as np
@@ -21,9 +20,17 @@ import joblib
 import pickle
 from collections import Counter
 from datetime import datetime
+import os
+import glob
+import io
+from PIL import Image
+
+# Configuración de entorno y supresión de avisos
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore", message=".*np.object.*")
 
 # Descargar recursos de NLTK
-warnings.filterwarnings('ignore')
 nltk.download('punkt', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
@@ -57,12 +64,6 @@ try:
 except ImportError:
     print("⚠️ Please restart your kernel. Libraries were installed but haven't been loaded yet.") 
 
-import joblib
-import pickle
-from datetime import datetime
-import io
-from PIL import Image
-
 # Deep Learning imports
 try:
     import tensorflow as tf
@@ -84,6 +85,14 @@ try:
     HAS_TRANSFORMERS = True
 except:
     HAS_TRANSFORMERS = False
+
+try:
+    import torch
+    import torch.nn as nn
+    from torch.utils.data import Dataset, DataLoader
+    HAS_TORCH = True
+except:
+    HAS_TORCH = False
 
 # PDF generation imports
 try:
