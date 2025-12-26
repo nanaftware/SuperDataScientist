@@ -1,7 +1,7 @@
 # SuperDataScientist
 ensayo que reúne varios modelos para análisis de datos y data science
 
-Tiene un instalador automatico con las bibliotecas basicas de DS, y algunas opcionales
+Tiene un instalador automatico con las bibliotecas basicas, y algunas opcionales.
 
 py install_dependencies.py
 ============================================================
