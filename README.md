@@ -261,10 +261,124 @@ Name: count, dtype: int64
 📋 REPORTE DE CLASIFICACIÓN - MEJOR MODELO
 ============================================================
               precision    recall  f1-score   support
-
     negativo     1.0000    1.0000    1.0000         4
     positivo     1.0000    1.0000    1.0000         4
 
     accuracy                         1.0000         8
    macro avg     1.0000    1.0000    1.0000         8
 weighted avg     1.0000    1.0000    1.0000         8
+============================================================
+
+
+Para datasets mas grades seleccion de dos modelos entre los 16
+📝 Iniciando AutoML - Comparador de 2 Modelos
+🚀 Versión optimizada para VELOCIDAD
+
+
+==========================================================================================
+⚙️  CONFIGURACIÓN
+==========================================================================================
+¿Usar dataset propio (CSV)? (s/N): s
+✅ Cargado:  df_limpio.csv (419827 filas)
+
+📊 Dataset: 419827 filas
+   Columna de texto: 'texto'
+   Columna de etiqueta: 'polaridad'
+
+   Distribución de clases:
+      positivo: 225279 (53.7%)
+      neutro: 133534 (31.8%)
+      negativo: 61014 (14.5%)
+
+==========================================================================================
+🤖 MODELOS DISPONIBLES EN AutoML
+==========================================================================================
+
+📌 Selecciona 2 modelos diferentes para comparar
+
+#   Modelo                    Descripción                              Velocidad       Precisión    
+
+--------------------------------------------------------------------------------------------------  
+1   Logistic Regression       ⚡ Modelo lineal rápido y confiable       ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
+2   Ridge Classifier          ⚡ Regularización L2, versión lineal robusta ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
+3   SGD Classifier            ⚡ Descenso de gradiente estocástico      ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
+4   Multinomial NB            📊 Probabilístico, ideal para conteos de palabras ⚡⚡⚡ Muy rápido   ⭐⭐⭐ Bueno para NLP
+5   Bernoulli NB              📊 Probabilístico para características binarias ⚡⚡⚡ Muy rápido  ⭐ ⭐ Aceptable
+6   SVM (Linear)              🎯 Máquinas de soporte vectorial (kernel lineal) ⚡⚡ Rápido       ⭐ ⭐⭐⭐ Excelente
+7   SVM (RBF)                 🎯 Máquinas de soporte vectorial (kernel RBF) ⚡ Más lento     ⭐⭐⭐ ⭐ Muy bueno
+8   Decision Tree             🌳 Árbol de decisión simple e interpretable ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
+9   Random Forest             🌲 Ensemble de árboles paralelos          ⚡⚡ Rápido       ⭐⭐⭐⭐ Muy bueno
+10  Extra Trees               🌲 Arboles extra aleatorizados (aún más rápido) ⚡⚡ Rápido       ⭐⭐⭐⭐ Muy bueno
+11  Gradient Boosting         🚀 Boosting secuencial, excelente precisión ⚡⚡ Rápido       ⭐⭐⭐⭐⭐ Excelente
+12  AdaBoost                  🚀 Adaptive Boosting, robusto             ⚡⚡ Rápido       ⭐⭐⭐⭐ Muy bueno
+13  XGBoost                   ⚡🚀 Boosting ultra-optimizado, MÁS RÁPIDO ⚡⚡ Rápido       ⭐⭐⭐⭐ ⭐ Excelente
+14  KNN (k=5)                 📍 K-Nearest Neighbors, simple            ⚡ Lento en test ⭐⭐⭐ Bueno
+15  LightGBM                  💡 Boosting ultra-ligero, MÁS RÁPIDO que XGBoost ⚡⚡⚡ Muy rápido  ⭐⭐⭐⭐⭐ Excelente
+16  CatBoost                  🐱 Boosting con manejo automático de categorías ⚡⚡ Rápido       ⭐⭐⭐⭐⭐ Excelente
+
+------------------------------------------------------------------------------------------
+💡 RECOMENDACIONES RÁPIDAS:
+   - Para MÁXIMA VELOCIDAD: elige 'Logistic Regression' y 'XGBoost'
+   - Para MÁXIMA PRECISIÓN: elige 'Gradient Boosting' y 'XGBoost'
+   - BALANCEADO: 'Logistic Regression' y 'Random Forest'
+------------------------------------------------------------------------------------------
+
+🔽 Selecciona el MODELO #1 (1-16): 1
+
+   ✅ 'Logistic Regression' seleccionado
+      ⚡ Modelo lineal rápido y confiable
+      ⚡⚡⚡ Muy rápido | ⭐⭐⭐ Bueno
+
+🔽 Selecciona el MODELO #2 (1-16): 12
+
+   ✅ 'AdaBoost' seleccionado
+      🚀 Adaptive Boosting, robusto
+      ⚡⚡ Rápido | ⭐⭐⭐⭐ Muy bueno
+
+==========================================================================================
+✅ MODELOS SELECCIONADOS
+==========================================================================================
+
+1. Logistic Regression
+   📝 ⚡ Modelo lineal rápido y confiable
+   ⚡ Velocidad: ⚡⚡⚡ Muy rápido
+   🎯 Precisión: ⭐⭐⭐ Bueno
+
+2. AdaBoost
+   📝 🚀 Adaptive Boosting, robusto
+   ⚡ Velocidad: ⚡⚡ Rápido
+   🎯 Precisión: ⭐⭐⭐⭐ Muy bueno
+
+==========================================================================================
+⚙️  INICIALIZANDO SISTEMA AUTOML
+==========================================================================================
+
+🔧 Configuración:
+   - Lenguaje:  Español
+   - Test size: 20%
+   - Balanceo de clases:  SMOTE
+   - Hiperparameter tuning:  DESACTIVADO (para velocidad)
+   - Deep Learning:  DESACTIVADO (para velocidad)
+
+==========================================================================================
+🚀 EJECUTANDO PIPELINE
+==========================================================================================
+📊 Cargando datos...
+   Total de registros: 419827
+   Columna de texto: 'texto'
+   Columna de etiquetas: 'polaridad'
+   ✓ Datos cargados: 419827 registros válidos
+   Distribución de clases:
+polaridad
+positivo    225279
+neutro      133534
+negativo     61014
+Name: count, dtype: int64
+
+🔧 Preprocesando textos...
+   - Limpieza de texto
+   - Conversión a minúsculas
+   - Tokenización
+   - Eliminación de puntuación
+   - Eliminación de stop words
+   - Lematización...
