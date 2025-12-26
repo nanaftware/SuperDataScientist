@@ -91,7 +91,7 @@ if __name__ == "__main__":
         random_state=42,
         balance_method='smote',
         custom_metrics=['f1_score', 'balanced_accuracy', 'matthews_corrcoef'],
-        use_hyperparameter_tuning=False,
+        use_hyperparameter_tuning=True,#Para ganar tiempo en un ordenador menos potente podemos cambiar esto a =False
         use_deep_learning=False
     )
 
@@ -104,4 +104,5 @@ if __name__ == "__main__":
         )
         print(f"\n✨ ¡Proceso completado! Mejor modelo: {best_model_name}")
     except Exception as e:
+
         print(f"\n❌ Error durante la ejecución del pipeline: {e}")
