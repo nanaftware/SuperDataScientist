@@ -1,4 +1,3 @@
-
 """
 Sistema AutoML para Análisis de NLP
 Preprocesamiento automático, selección de modelos y visualización de resultados
@@ -85,6 +84,14 @@ try:
     HAS_TRANSFORMERS = True
 except:
     HAS_TRANSFORMERS = False
+
+# SentenceTransformer para embeddings semánticos
+try:
+    from sentence_transformers import SentenceTransformer
+    HAS_SENTENCE_TRANSFORMERS = True
+except ImportError:
+    HAS_SENTENCE_TRANSFORMERS = False
+    print("⚠️ sentence-transformers no instalado. Instalar con: pip install sentence-transformers")
 
 try:
     import torch
@@ -187,11 +194,21 @@ class TextPreprocessor:
 class AutoNLP:
     """
     Sistema AutoML para análisis de NLP con selección automática de modelos
+    MODIFICADO: Ahora acepta una lista específica de modelos a entrenar
     """
     
     def __init__(self, language='spanish', test_size=0.2, random_state=42, 
                  balance_method=None, custom_metrics=None, use_hyperparameter_tuning=False,
-                 use_deep_learning=False, max_sequence_length=100):
+                 use_deep_learning=False, max_sequence_length=100, models_to_train=None,
+                 vectorization_method='tfidf', st_model_name='nomic-embed-text-v1.5/v2 + ML', trust_remote_code=True):
+        """
+        Constructor con soporte para selección de modelos específicos y método de vectorización
+        
+        Args:
+            models_to_train (list, optional): Lista de nombres de modelos específicos a entrenar.
+            vectorization_method (str): 'tfidf' o 'sentence_transformer'
+            st_model_name (str): Nombre del modelo de SentenceTransformer a usar si corresponde.
+        """
         self.language = language
         self.test_size = test_size
         self.random_state = random_state
@@ -200,8 +217,14 @@ class AutoNLP:
         self.use_hyperparameter_tuning = use_hyperparameter_tuning
         self.use_deep_learning = use_deep_learning
         self.max_sequence_length = max_sequence_length
+        self.models_to_train = models_to_train
+        self.vectorization_method = vectorization_method
+        self.st_model_name = st_model_name
+        self.trust_remote_code = trust_remote_code
+        
         self.preprocessor = TextPreprocessor(language=language)
         self.vectorizer = None
+        self.st_model = None
         self.models = {}
         self.results = {}
         self.best_model = None
@@ -217,57 +240,50 @@ class AutoNLP:
         self.saved_figures = []
 
     def run_full_pipeline(self, df, text_column, label_column):
-        # 1. Cargar y validar los datos
+        """Pipeline completo de entrenamiento"""
         self.load_data(df, text_column, label_column)
-        # 2. Preprocesar los textos
         self.preprocess_data()
-        # 3. Analizar frecuencia de palabras (para visualizaciones)
         self.analyze_word_frequency()
-        # 4. Preparar conjuntos de entrenamiento y prueba
         self.prepare_datasets()
-        # 5. Balancear clases si se especificó
         self.balance_classes()
-        # 6. Entrenar los modelos y seleccionar el mejor
         self.train_models()
-        # 7. Generar el dashboard con visualizaciones
         self.create_dashboard()
-        # 8. Exportar el modelo entrenado
         self.export_model()
         return self.best_model, self.best_model_name
 
     def predict(self, texts):
-        if self.best_model is None or self.vectorizer is None:
+        """Hacer predicciones con el mejor modelo entrenado"""
+        if self.best_model is None:
             raise ValueError("El modelo no ha sido entrenado aún.")
+        
+        if self.vectorization_method == 'tfidf':
+            processed = [self.preprocessor.preprocess(t) for t in texts]
+            X = self.vectorizer.transform(processed)
+        else:
+            # Para SentenceTransformer solemos usar el texto original
+            X = self.st_model.encode(texts)
             
-        # Preprocesar
-        processed = [self.preprocessor.preprocess(t) for t in texts]
-        
-        # Vectorizar
-        X = self.vectorizer.transform(processed)
-        
-        # Predecir (numérico)
         y_pred = self.best_model.predict(X)
-        
-        # Decodificar
         return self.label_encoder.inverse_transform(y_pred)
 
     def predict_proba(self, texts):
-        if self.best_model is None or self.vectorizer is None:
+        """Obtener probabilidades de predicción"""
+        if self.best_model is None:
             raise ValueError("El modelo no ha sido entrenado aún.")
             
         if not hasattr(self.best_model, 'predict_proba'):
             raise ValueError(f"El mejor modelo ({self.best_model_name}) no soporta predict_proba.")
-            
-        # Preprocesar
-        processed = [self.preprocessor.preprocess(t) for t in texts]
         
-        # Vectorizar
-        X = self.vectorizer.transform(processed)
+        if self.vectorization_method == 'tfidf':
+            processed = [self.preprocessor.preprocess(t) for t in texts]
+            X = self.vectorizer.transform(processed)
+        else:
+            X = self.st_model.encode(texts)
         
-        # Probabilidades
         return self.best_model.predict_proba(X)
         
     def load_data(self, df, text_column, label_column):
+        """Cargar y validar datos"""
         print("📊 Cargando datos...")
         print(f"   Total de registros: {len(df)}")
         print(f"   Columna de texto: '{text_column}'")
@@ -277,7 +293,6 @@ class AutoNLP:
         self.text_column = text_column
         self.label_column = label_column
         
-        # Verificar valores nulos
         null_count = df[[text_column, label_column]].isnull().sum()
         if null_count.sum() > 0:
             print(f"   ⚠️  Valores nulos encontrados: {null_count.to_dict()}")
@@ -302,14 +317,13 @@ class AutoNLP:
             self.preprocessor.preprocess
         )
         
-        # Estadísticas de preprocesamiento
         avg_len_original = self.df[self.text_column].str.split().str.len().mean()
         avg_len_processed = self.df['processed_text'].str.split().str.len().mean()
         
         print(f"\n   ✓ Preprocesamiento completado")
         print(f"   Longitud promedio original: {avg_len_original:.1f} palabras")
         print(f"   Longitud promedio procesado: {avg_len_processed:.1f} palabras")
-        
+
     def analyze_word_frequency(self):
         """Analizar palabras más frecuentes por clase"""
         print("\n📊 Analizando frecuencia de palabras...")
@@ -317,48 +331,44 @@ class AutoNLP:
         self.word_freq = {}
         
         for label in self.df[self.label_column].unique():
-            # Filtrar textos por clase
             texts = self.df[self.df[self.label_column] == label]['processed_text']
-            
-            # Contar palabras
             all_words = ' '.join(texts).split()
             word_counts = Counter(all_words)
-            
-            # Guardar top palabras
             self.word_freq[label] = dict(word_counts.most_common(50))
             
             print(f"\n   Clase '{label}': {len(word_counts)} palabras únicas")
             print(f"   Top 10 palabras: {list(word_counts.most_common(10))}")
         
         return self.word_freq
-    
+
     def balance_classes(self):
         """Balancear clases del conjunto de entrenamiento"""
         if self.balance_method is None:
             print("\n   ⚖️  Sin balanceo de clases (usando datos originales)")
             return
-        
+            
         print(f"\n⚖️  Balanceando clases usando: {self.balance_method}")
-        print(f"   Distribución original:")
-        print(f"   {Counter(self.y_train)}")
+        print(f"   Distribución original: {Counter(self.y_train)}")
+        
+        # Advertencia de rendimiento para SMOTE con datasets grandes
+        if self.balance_method in ['smote', 'smoteenn', 'smotetomek'] and len(self.y_train) > 50000:
+            print(f"   ⚠️  ADVERTENCIA DE RENDIMIENTO: SMOTE con {len(self.y_train)} registros")
+            print(f"       en un espacio de {self.X_train.shape[1]} dimensiones puede tardar VARIAS HORAS.")
+            print(f"       Se recomienda usar 'oversample' para este volumen de datos.")
         
         try:
             if self.balance_method == 'oversample':
                 ros = RandomOverSampler(random_state=self.random_state)
                 self.X_train, self.y_train = ros.fit_resample(self.X_train, self.y_train)
-                
             elif self.balance_method == 'undersample':
                 rus = RandomUnderSampler(random_state=self.random_state)
                 self.X_train, self.y_train = rus.fit_resample(self.X_train, self.y_train)
-                
             elif self.balance_method == 'smote':
                 smote = SMOTE(random_state=self.random_state)
                 self.X_train, self.y_train = smote.fit_resample(self.X_train, self.y_train)
-                
             elif self.balance_method == 'smoteenn':
                 smoteenn = SMOTEENN(random_state=self.random_state)
                 self.X_train, self.y_train = smoteenn.fit_resample(self.X_train, self.y_train)
-                
             elif self.balance_method == 'smotetomek':
                 smotetomek = SMOTETomek(random_state=self.random_state)
                 self.X_train, self.y_train = smotetomek.fit_resample(self.X_train, self.y_train)
@@ -375,28 +385,40 @@ class AutoNLP:
         print(f"\n📦 Preparando conjuntos de datos...")
         print(f"   Proporción de prueba: {self.test_size*100}%")
         
-        # Codificar etiquetas si no son numéricas
         from sklearn.preprocessing import LabelEncoder
         self.label_encoder = LabelEncoder()
         
-        X = self.df['processed_text']
+        # SentenceTransformer prefiere texto original, TF-IDF prefiere texto procesado
+        if self.vectorization_method == 'sentence_transformer':
+            print("   ℹ️  Usando texto ORIGINAL (recomendado para embeddings semánticos)")
+            X = self.df[self.text_column]
+        else:
+            X = self.df['processed_text']
+            
         y = self.label_encoder.fit_transform(self.df[self.label_column])
-        
-        # Guardar clases para referencia
         self.classes_ = self.label_encoder.classes_
         
-        # Dividir datos
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=self.test_size, 
             random_state=self.random_state, stratify=y
         )
         
-        # Vectorización TF-IDF
-        print("   Aplicando vectorización TF-IDF...")
-        self.vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1, 2))
-        
-        self.X_train = self.vectorizer.fit_transform(X_train)
-        self.X_test = self.vectorizer.transform(X_test)
+        if self.vectorization_method == 'sentence_transformer':
+            if not HAS_SENTENCE_TRANSFORMERS:
+                print("   ⚠️  SentenceTransformers no está disponible. Usando TF-IDF por defecto...")
+                self.vectorization_method = 'tfidf'
+            else:
+                print(f"   Aplicando vectorización SentenceTransformer ({self.st_model_name})...")
+                self.st_model = SentenceTransformer(self.st_model_name, trust_remote_code=self.trust_remote_code)
+                # NOTA: SentenceTransformer prefiere el texto original o poco procesado comparado con TF-IDF
+                self.X_train = self.st_model.encode(X_train.tolist(), show_progress_bar=True)
+                self.X_test = self.st_model.encode(X_test.tolist(), show_progress_bar=True)
+                
+        if self.vectorization_method == 'tfidf':
+            print("   Aplicando vectorización TF-IDF...")
+            self.vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1, 2))
+            self.X_train = self.vectorizer.fit_transform(X_train)
+            self.X_test = self.vectorizer.transform(X_test)
         self.y_train = y_train
         self.y_test = y_test
         
@@ -405,97 +427,104 @@ class AutoNLP:
         print(f"   Prueba: {self.X_test.shape[0]} muestras")
         print(f"   Características: {self.X_train.shape[1]} features")
         print(f"   Clases detectadas: {list(self.classes_)}")
-        
-    def train_models(self):
-        """Entrenar múltiples modelos automáticamente"""
-        print("\n🤖 Entrenando modelos de ML...")
-        print("="*60)
-        
-        # Importar modelos adicionales
-        try:
-            from lightgbm import LGBMClassifier
-            has_lgbm = True
-        except:
-            has_lgbm = False
-            
-        try:
-            from catboost import CatBoostClassifier
-            has_catboost = True
-        except:
-            has_catboost = False
-        
-        # Definir modelos a probar (EXTENDIDO)
-        self.models = {
-            # Modelos lineales
+    
+    def _get_all_available_models(self):
+        """Catálogo maestro de todos los modelos disponibles"""
+        all_models = {
             'Logistic Regression': LogisticRegression(max_iter=1000, random_state=self.random_state),
             'Ridge Classifier': RidgeClassifier(random_state=self.random_state),
             'SGD Classifier': SGDClassifier(random_state=self.random_state, loss='log_loss'),
-            
-            # Naive Bayes
             'Multinomial NB': MultinomialNB(),
             'Bernoulli NB': BernoulliNB(),
-            
-            # SVM
             'SVM (Linear)': LinearSVC(random_state=self.random_state, max_iter=1000),
             'SVM (RBF)': SVC(kernel='rbf', probability=True, random_state=self.random_state),
-            
-            # Árboles de decisión
             'Decision Tree': DecisionTreeClassifier(random_state=self.random_state),
-            
-            # Ensemble methods
             'Random Forest': RandomForestClassifier(n_estimators=100, random_state=self.random_state),
             'Extra Trees': ExtraTreesClassifier(n_estimators=100, random_state=self.random_state),
             'Gradient Boosting': GradientBoostingClassifier(random_state=self.random_state),
             'AdaBoost': AdaBoostClassifier(random_state=self.random_state),
-            
-            # Boosting avanzado
             'XGBoost': XGBClassifier(random_state=self.random_state, eval_metric='logloss', verbosity=0),
-            
-            # KNN
             'KNN (k=5)': KNeighborsClassifier(n_neighbors=5),
         }
         
-        # Agregar LightGBM si está disponible
-        if has_lgbm:
-            self.models['LightGBM'] = LGBMClassifier(random_state=self.random_state, verbosity=-1)
+        try:
+            from lightgbm import LGBMClassifier
+            all_models['LightGBM'] = LGBMClassifier(random_state=self.random_state, verbosity=-1)
+        except ImportError:
+            pass
         
-        # Agregar CatBoost si está disponible
-        if has_catboost:
-            self.models['CatBoost'] = CatBoostClassifier(random_state=self.random_state, verbose=0)
+        try:
+            from catboost import CatBoostClassifier
+            all_models['CatBoost'] = CatBoostClassifier(random_state=self.random_state, verbose=0)
+        except ImportError:
+            pass
+        
+        return all_models
+    
+    def _filter_models_to_train(self, all_models):
+        """Filtrar modelos según la selección del usuario"""
+        if self.models_to_train is None:
+            print(f"   📋 Modo AUTO: Entrenando TODOS los {len(all_models)} modelos disponibles")
+            return all_models
+        
+        filtered_models = {}
+        models_not_found = []
+        
+        for model_name in self.models_to_train:
+            if model_name in all_models:
+                filtered_models[model_name] = all_models[model_name]
+            else:
+                models_not_found.append(model_name)
+        
+        print(f"   🎯 Modo SELECTIVO: Entrenando {len(filtered_models)} modelo(s) específico(s)")
+        print(f"      Modelos seleccionados: {list(filtered_models.keys())}")
+        
+        if models_not_found:
+            print(f"   ⚠️  Advertencia: Los siguientes modelos no se encontraron:")
+            print(f"      {models_not_found}")
+            print(f"      Modelos disponibles: {list(all_models.keys())}")
+        
+        if len(filtered_models) == 0:
+            raise ValueError(
+                f"❌ Error: Ninguno de los modelos especificados existe.\n"
+                f"   Solicitaste: {self.models_to_train}\n"
+                f"   Disponibles: {list(all_models.keys())}"
+            )
+        
+        return filtered_models
+        
+    def train_models(self):
+        """Entrenar modelos seleccionados"""
+        print("\n🤖 Entrenando modelos de ML...")
+        print("="*60)
+        
+        all_available_models = self._get_all_available_models()
+        self.models = self._filter_models_to_train(all_available_models)
         
         print(f"   Total de modelos a entrenar: {len(self.models)}")
+        print()
         
-        # Entrenar y evaluar cada modelo
         for name, model in self.models.items():
             print(f"\n🔹 Entrenando {name}...")
             
             try:
-                # Hyperparameter tuning si está activado
                 if self.use_hyperparameter_tuning and name in self.get_hyperparameter_grids():
                     model = self.tune_hyperparameters(name, model, self.X_train, self.y_train)
                 else:
-                    # Entrenar modelo normal
                     model.fit(self.X_train, self.y_train)
                 
-                # Predicciones
                 y_pred = model.predict(self.X_test)
                 y_pred_proba = model.predict_proba(self.X_test) if hasattr(model, 'predict_proba') else None
                 
-                # Métricas estándar
                 accuracy = accuracy_score(self.y_test, y_pred)
                 precision = precision_score(self.y_test, y_pred, average='weighted', zero_division=0)
                 recall = recall_score(self.y_test, y_pred, average='weighted', zero_division=0)
                 f1 = f1_score(self.y_test, y_pred, average='weighted', zero_division=0)
-                
-                # Métricas adicionales
                 balanced_acc = balanced_accuracy_score(self.y_test, y_pred)
                 mcc = matthews_corrcoef(self.y_test, y_pred)
                 kappa = cohen_kappa_score(self.y_test, y_pred)
-                
-                # Cross-validation
                 cv_scores = cross_val_score(model, self.X_train, self.y_train, cv=5, scoring='accuracy')
                 
-                # Guardar resultados
                 self.results[name] = {
                     'model': model,
                     'predictions': y_pred,
@@ -511,7 +540,6 @@ class AutoNLP:
                     'cv_std': cv_scores.std()
                 }
                 
-                # Mostrar métricas personalizadas
                 print(f"   Metrics:")
                 for metric in self.custom_metrics:
                     if metric in self.results[name]:
@@ -521,39 +549,167 @@ class AutoNLP:
                 print(f"   ⚠️  Error entrenando {name}: {str(e)}")
                 continue
         
-        # Entrenar modelos de Deep Learning si está activado
-        if self.use_deep_learning:
-            self.train_deep_learning_models()
-        
-        # Seleccionar mejor modelo
         self.select_best_model()
 
     def get_hyperparameter_grids(self):
-        """Obtener grids de hiperparámetros para optimización"""
-        grids = {
-            'Logistic Regression': {
-                'C': [0.1, 1, 10],
-                'penalty': ['l2']
-            },
-            'Random Forest': {
-                'n_estimators': [100, 200],
-                'max_depth': [10, 20, None]
-            },
-            'SVM (Linear)': {
-                'C': [0.1, 1, 10]
-            },
-            'XGBoost': {
-                'n_estimators': [100, 200],
-                'learning_rate': [0.01, 0.1]
-            },
-            'Multinomial NB': {
-                'alpha': [0.1, 0.5, 1.0]
-            }
+        """Grids de hiperparámetros para optimización"""
+        return {
+            'Logistic Regression': {'C': [0.1, 1, 10], 'penalty': ['l2']},
+            'Random Forest': {'n_estimators': [100, 200], 'max_depth': [10, 20, None]},
+            'SVM (Linear)': {'C': [0.1, 1, 10]},
+            'XGBoost': {'n_estimators': [100, 200], 'learning_rate': [0.01, 0.1]},
+            'Multinomial NB': {'alpha': [0.1, 0.5, 1.0]}
         }
-        return grids
 
     def tune_hyperparameters(self, name, model, X, y):
-        """Optimizar hiperparámetros usando GridSearchCV"""
+        """Optimizar hiperparámetros"""
+        grid = self.get_hyperparameter_grids().get(name)
+        if not grid:
+            return model
+            
+        print(f"   ⚙️  Optimizando {name}...")
+        grid_search = GridSearchCV(model, grid, cv=3, scoring='f1_weighted', n_jobs=-1)
+        grid_search.fit(X, y)
+        print(f"      Best params: {grid_search.best_params_}")
+        return grid_search.best_estimator_
+    
+    def select_best_model(self):
+        """Seleccionar el mejor modelo"""
+        print("\n" + "="*60)
+        print("🏆 SELECCIÓN AUTOMÁTICA DEL MEJOR MODELO")
+        print("="*60)
+        
+        main_metric = self.custom_metrics[0] if self.custom_metrics else 'f1_score'
+        sorted_models = sorted(self.results.items(), key=lambda x: x[1][main_metric], reverse=True)
+        
+        self.best_model_name = sorted_models[0][0]
+        self.best_model = self.results[self.best_model_name]['model']
+        
+        print(f"\n✨ Mejor modelo seleccionado: {self.best_model_name}")
+        print(f"   Criterio de selección: {main_metric}")
+        print(f"\n   📊 Métricas del mejor modelo:")
+        
+        metrics_to_show = ['accuracy', 'precision', 'recall', 'f1_score', 
+                          'balanced_accuracy', 'matthews_corrcoef', 'cohen_kappa']
+        
+        for metric in metrics_to_show:
+            if metric in self.results[self.best_model_name]:
+                value = self.results[self.best_model_name][metric]
+                print(f"   - {metric}: {value:.4f}")
+        
+        print(f"\n   🥇 Ranking de modelos por {main_metric}:")
+        for i, (name, result) in enumerate(sorted_models, 1):
+            print(f"   {i}. {name}: {result[main_metric]:.4f}")
+    
+    def export_model(self, filename=None, export_format='joblib'):
+        """Exportar modelo entrenado"""
+        print("\n💾 Exportando modelo...")
+        
+        if filename is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"best_model_{self.best_model_name.replace(' ', '_')}_{timestamp}"
+        
+        model_package = {
+            'model': self.best_model,
+            'vectorizer': self.vectorizer,
+            'st_model': self.st_model,
+            'st_model_name': self.st_model_name,
+            'vectorization_method': self.vectorization_method,
+            'preprocessor': self.preprocessor,
+            'label_encoder': self.label_encoder,
+            'model_name': self.best_model_name,
+            'metrics': self.results[self.best_model_name],
+            'label_column': self.label_column,
+            'text_column': self.text_column,
+            'classes': list(self.classes_),
+            'training_date': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        try:
+            if export_format == 'joblib':
+                filepath = f"{filename}.joblib"
+                joblib.dump(model_package, filepath)
+            else:
+                filepath = f"{filename}.pkl"
+                with open(filepath, 'wb') as f:
+                    pickle.dump(model_package, f)
+            
+            self.model_export_path = filepath
+            print(f"   ✓ Modelo exportado exitosamente: {filepath}")
+            
+            # Generar archivo README.txt con documentación
+            readme_path = f"{filename}_README.txt"
+            self._create_readme(readme_path, model_package)
+            print(f"   ✓ Documentación generada: {readme_path}")
+            
+            return filepath
+            
+        except Exception as e:
+            print(f"   ❌ Error exportando modelo: {str(e)}")
+            return None
+     
+    def _get_file_size(self, filepath):
+        """Obtener tamaño del archivo"""
+        import os
+        size_bytes = os.path.getsize(filepath)
+        if size_bytes < 1024:
+            return f"{size_bytes} bytes"
+        elif size_bytes < 1024**2:
+            return f"{size_bytes/1024:.2f} KB"
+        else:
+            return f"{size_bytes/(1024**2):.2f} MB"
+    
+    def _create_readme(self, filepath, model_package):
+        """Crear archivo README con información del modelo"""
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write("="*60 + "\n")
+            f.write("MODELO DE NLP - DOCUMENTACIÓN\n")
+            f.write("="*60 + "\n\n")
+            
+            f.write(f"Modelo: {model_package['model_name']}\n")
+            f.write(f"Método de vectorización: {model_package['vectorization_method']}\n")
+            if model_package['vectorization_method'] == 'sentence_transformer':
+                f.write(f"Embeddings: {model_package['st_model_name']}\n")
+            f.write(f"Fecha de entrenamiento: {model_package['training_date']}\n")
+            f.write(f"Clases: {', '.join(map(str, model_package['classes']))}\n\n")
+            
+            f.write("MÉTRICAS DE RENDIMIENTO:\n")
+            f.write("-" * 40 + "\n")
+            metrics = model_package['metrics']
+            for key in ['accuracy', 'precision', 'recall', 'f1_score', 'balanced_accuracy']:
+                if key in metrics:
+                    f.write(f"{key}: {metrics[key]:.4f}\n")
+            
+            f.write("\n" + "="*60 + "\n")
+            f.write("CÓMO CARGAR Y USAR EL MODELO:\n")
+            f.write("="*60 + "\n\n")
+            
+            f.write("import joblib\n")
+            if model_package['vectorization_method'] == 'sentence_transformer':
+                f.write("from sentence_transformers import SentenceTransformer\n")
+            f.write("\n")
+            f.write("# Cargar paquete del modelo\n")
+            f.write(f"package = joblib.load('{self.model_export_path}')\n")
+            f.write("model = package['model']\n")
+            f.write("preprocessor = package['preprocessor']\n")
+            
+            if model_package['vectorization_method'] == 'tfidf':
+                f.write("vectorizer = package['vectorizer']\n\n")
+                f.write("# Hacer predicción\n")
+                f.write("texto = 'Tu texto aquí'\n")
+                f.write("texto_procesado = preprocessor.preprocess(texto)\n")
+                f.write("X = vectorizer.transform([texto_procesado])\n")
+            else:
+                f.write("st_model = package['st_model']\n\n")
+                f.write("# Hacer predicción\n")
+                f.write("texto = 'Tu texto aquí'\n")
+                f.write("X = st_model.encode([texto])\n")
+                
+            f.write("prediccion = model.predict(X)\n")
+            f.write("probabilidad = model.predict_proba(X)\n")
+    
+    def tune_hyperparameters(self, name, model, X, y):
+        # Optimizar hiperparámetros usando GridSearchCV
         grid = self.get_hyperparameter_grids().get(name)
         if not grid:
             return model
@@ -567,7 +723,7 @@ class AutoNLP:
         return grid_search.best_estimator_
     
     def train_deep_learning_models(self):
-        """Entrenar modelos de Deep Learning (LSTM, CNN, BERT)"""
+        # Entrenar modelos de Deep Learning (LSTM, CNN, BERT)
         if not HAS_TENSORFLOW:
             print("\n   ⚠️  TensorFlow no está instalado. Saltando modelos DL.")
             return
@@ -694,7 +850,7 @@ class AutoNLP:
             print(f"   ⚠️  Error en Bi-LSTM: {e}")
     
     def _build_lstm_model(self, num_classes):
-        """Construir modelo LSTM"""
+       # Construir modelo LSTM
         model = Sequential([
             Embedding(input_dim=5000, output_dim=128, input_length=self.max_sequence_length),
             LSTM(64, dropout=0.2, recurrent_dropout=0.2),
@@ -713,7 +869,7 @@ class AutoNLP:
         return model
     
     def _build_cnn_model(self, num_classes):
-        """Construir modelo CNN"""
+       # Construir modelo CNN
         model = Sequential([
             Embedding(input_dim=5000, output_dim=128, input_length=self.max_sequence_length),
             Conv1D(128, 5, activation='relu'),
@@ -735,7 +891,7 @@ class AutoNLP:
         return model
     
     def _build_bilstm_model(self, num_classes):
-        """Construir modelo Bidirectional LSTM"""
+       # Construir modelo Bidirectional LSTM
         model = Sequential([
             Embedding(input_dim=5000, output_dim=128, input_length=self.max_sequence_length),
             Bidirectional(LSTM(64, dropout=0.2, recurrent_dropout=0.2)),
@@ -754,7 +910,7 @@ class AutoNLP:
         return model
     
     def _save_dl_results(self, model_name, y_true, y_pred, model):
-        """Guardar resultados de modelos DL"""
+       # Guardar resultados de modelos DL
         accuracy = accuracy_score(y_true, y_pred)
         precision = precision_score(y_true, y_pred, average='weighted', zero_division=0)
         recall = recall_score(y_true, y_pred, average='weighted', zero_division=0)
@@ -777,137 +933,10 @@ class AutoNLP:
             'cv_mean': accuracy,  # No hay CV para DL
             'cv_std': 0
         }
-        
-    def select_best_model(self):
-        """Seleccionar automáticamente el mejor modelo"""
-        print("\n" + "="*60)
-        print("🏆 SELECCIÓN AUTOMÁTICA DEL MEJOR MODELO")
-        print("="*60)
-        
-        # Determinar métrica principal para selección
-        main_metric = self.custom_metrics[0] if self.custom_metrics else 'f1_score'
-        
-        # Ordenar por métrica principal
-        sorted_models = sorted(
-            self.results.items(), 
-            key=lambda x: x[1][main_metric], 
-            reverse=True
-        )
-        
-        self.best_model_name = sorted_models[0][0]
-        self.best_model = self.results[self.best_model_name]['model']
-        
-        print(f"\n✨ Mejor modelo seleccionado: {self.best_model_name}")
-        print(f"   Criterio de selección: {main_metric}")
-        print(f"\n   📊 Métricas del mejor modelo:")
-        
-        # Mostrar todas las métricas disponibles
-        metrics_to_show = ['accuracy', 'precision', 'recall', 'f1_score', 
-                          'balanced_accuracy', 'matthews_corrcoef', 'cohen_kappa']
-        
-        for metric in metrics_to_show:
-            if metric in self.results[self.best_model_name]:
-                value = self.results[self.best_model_name][metric]
-                print(f"   - {metric}: {value:.4f}")
-        
-        # Mostrar top 5 modelos
-        print(f"\n   🥇 Top 5 modelos por {main_metric}:")
-        for i, (name, result) in enumerate(sorted_models[:5], 1):
-            print(f"   {i}. {name}: {result[main_metric]:.4f}")
-        
-    def export_model(self, filename=None, export_format='joblib'):
-        print("\n💾 Exportando modelo...")
-        
-        if filename is None:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"best_model_{self.best_model_name.replace(' ', '_')}_{timestamp}"
-        
-        # Crear diccionario con todo lo necesario
-        model_package = {
-            'model': self.best_model,
-            'vectorizer': self.vectorizer,
-            'preprocessor': self.preprocessor,
-            'label_encoder': self.label_encoder,
-            'model_name': self.best_model_name,
-            'metrics': self.results[self.best_model_name],
-            'label_column': self.label_column,
-            'text_column': self.text_column,
-            'classes': list(self.classes_),
-            'training_date': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        
-        try:
-            if export_format == 'joblib':
-                filepath = f"{filename}.joblib"
-                joblib.dump(model_package, filepath)
-            else:  # pickle
-                filepath = f"{filename}.pkl"
-                with open(filepath, 'wb') as f:
-                    pickle.dump(model_package, f)
-            
-            self.model_export_path = filepath
-            print(f"   ✓ Modelo exportado exitosamente: {filepath}")
-            print(f"   Formato: {export_format}")
-            print(f"   Tamaño: {self._get_file_size(filepath)}")
-            
-            # Crear archivo README
-            readme_path = f"{filename}_README.txt"
-            self._create_readme(readme_path, model_package)
-            print(f"   ✓ Documentación creada: {readme_path}")
-            
-            return filepath
-            
-        except Exception as e:
-            print(f"   ❌ Error exportando modelo: {str(e)}")
-            return None
-    
-    def _get_file_size(self, filepath):
-        """Obtener tamaño del archivo"""
-        import os
-        size_bytes = os.path.getsize(filepath)
-        if size_bytes < 1024:
-            return f"{size_bytes} bytes"
-        elif size_bytes < 1024**2:
-            return f"{size_bytes/1024:.2f} KB"
-        else:
-            return f"{size_bytes/(1024**2):.2f} MB"
-    
-    def _create_readme(self, filepath, model_package):
-        """Crear archivo README con información del modelo"""
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write("="*60 + "\n")
-            f.write("MODELO DE NLP - DOCUMENTACIÓN\n")
-            f.write("="*60 + "\n\n")
-            
-            f.write(f"Modelo: {model_package['model_name']}\n")
-            f.write(f"Fecha de entrenamiento: {model_package['training_date']}\n")
-            f.write(f"Clases: {', '.join(map(str, model_package['classes']))}\n\n")
-            
-            f.write("MÉTRICAS DE RENDIMIENTO:\n")
-            f.write("-" * 40 + "\n")
-            metrics = model_package['metrics']
-            for key in ['accuracy', 'precision', 'recall', 'f1_score', 'balanced_accuracy']:
-                if key in metrics:
-                    f.write(f"{key}: {metrics[key]:.4f}\n")
-            
-            f.write("\n" + "="*60 + "\n")
-            f.write("CÓMO CARGAR Y USAR EL MODELO:\n")
-            f.write("="*60 + "\n\n")
-            
-            f.write("import joblib\n\n")
-            f.write("# Cargar modelo\n")
-            f.write(f"model_package = joblib.load('{self.model_export_path}')\n")
-            f.write("model = model_package['model']\n")
-            f.write("vectorizer = model_package['vectorizer']\n")
-            f.write("preprocessor = model_package['preprocessor']\n\n")
-            
-            f.write("# Hacer predicción\n")
-            f.write("texto = 'Tu texto aquí'\n")
-            f.write("texto_procesado = preprocessor.preprocess(texto)\n")
-            f.write("texto_vectorizado = vectorizer.transform([texto_procesado])\n")
-            f.write("prediccion = model.predict(texto_vectorizado)\n")
-            f.write("probabilidad = model.predict_proba(texto_vectorizado)\n")
-    
+    """
+    Sistema AutoML para análisis de NLP con selección automática de modelos
+    MODIFICADO: Ahora acepta una lista específica de modelos a entrenar
+    """
     @staticmethod
     def load_model(filepath):
         print(f"\n📂 Cargando modelo desde: {filepath}")
@@ -928,6 +957,7 @@ class AutoNLP:
         except Exception as e:
             print(f"   ❌ Error cargando modelo: {str(e)}")
             return None
+            
     def create_dashboard(self):
         """Crear dashboard completo con visualizaciones"""
         print("\n📊 Generando dashboard de resultados...")
