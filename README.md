@@ -6,9 +6,7 @@ ensayo que reúne varios modelos para análisis de datos y data science
 Tiene un instalador automatico con las bibliotecas basicas, y algunas opcionales.
 
 py install_dependencies.py
-============================================================
-  AutoML NLP - Instalador Inteligente
-============================================================
+==  AutoML NLP - Instalador Inteligente  ==
 
 🔍 Verificando dependencias...
 
@@ -31,7 +29,7 @@ py install_dependencies.py
 ✅ tensorflow
 ✅ keras
 
-============================================================
+===============
 
 ✅ Todos los paquetes esenciales ya están instalados
 
@@ -51,9 +49,7 @@ py install_dependencies.py
    ✅ wordnet
    ✅ averaged_perceptron_tagger
 
-============================================================
-  RESUMEN DE INSTALACIÓN
-============================================================
+==  RESUMEN DE INSTALACIÓN  ==
 
 ✅ Paquetes instalados: 18/18
 
@@ -77,9 +73,7 @@ py automl2.0.py
 7-Genera el dashboard con todas las visualizaciones.
 8-Exporta el modelo entrenado.
 
-============================================================
-⚙️  CONFIGURACIÓN DEL SISTEMA AUTOML
-============================================================
+==  ⚙️  CONFIGURACIÓN DEL SISTEMA AUTOML  ==
 
     Características Disponibles:
     ✅ 16+ Modelos de Machine Learning
@@ -134,8 +128,7 @@ Name: count, dtype: int64
    Características: 2 features
    Clases detectadas: ['negativo', 'positivo']
 
-🤖 Entrenando modelos de ML...
-============================================================
+🤖 Entrenando modelos de ML... ==
    Total de modelos a entrenar: 16
 
 🔹 Entrenando Logistic Regression...
@@ -231,9 +224,7 @@ Name: count, dtype: int64
 🔹 Entrenando CatBoost...
    ⚠️  Error entrenando CatBoost: The following error was raised: 'CatBoostClassifiier' object has no attribute '__sklearn_tags__'. It seems that there are no classes that implement `__sklearn_tags__` in the MRO and/or all classes in the MRO call `super().__sklearn_tags__()`. Make sure to inherit from `BaseEstimator` which implements `__sklearn_tags__` (or alternatively define `__sklearn_tags__` but we don't recommend this approach). Note that `BaseEstimator` needs to be on the right side of other Mixins in the inheritance order.
 
-============================================================
-🏆 SELECCIÓN AUTOMÁTICA DEL MEJOR MODELO
-============================================================
+==  🏆 SELECCIÓN AUTOMÁTICA DEL MEJOR MODELO  ==
 
 ✨ Mejor modelo seleccionado: Logistic Regression
    Criterio de selección: accuracy
@@ -259,9 +250,7 @@ Name: count, dtype: int64
 
 <img width="1366" height="655" alt="DashBoard" src="https://github.com/user-attachments/assets/e1874b73-e541-4b8d-a5e6-aa6871b2c999" />
 
-============================================================
-📋 REPORTE DE CLASIFICACIÓN - MEJOR MODELO
-============================================================
+==  📋 REPORTE DE CLASIFICACIÓN - MEJOR MODELO  ==
               precision    recall  f1-score   support
     negativo     1.0000    1.0000    1.0000         4
     positivo     1.0000    1.0000    1.0000         4
@@ -269,7 +258,7 @@ Name: count, dtype: int64
     accuracy                         1.0000         8
    macro avg     1.0000    1.0000    1.0000         8
 weighted avg     1.0000    1.0000    1.0000         8
-============================================================
+==
 
 
 Para datasets mas grades seleccion de dos modelos entre los 16
@@ -277,15 +266,11 @@ Para datasets mas grades seleccion de dos modelos entre los 16
 🚀 Versión optimizada para VELOCIDAD
 
 
-==========================================================================================
-⚙️  CONFIGURACIÓN
-==========================================================================================
+==  ⚙️  CONFIGURACIÓN  ==
 ¿Usar dataset propio (CSV)? (s/N): s
 ✅ Cargado: df_limpio.csv (419827 filas)
 
-----------------------------------------
-📝 MÉTODO DE VECTORIZACIÓN
-----------------------------------------
+---📝 MÉTODO DE VECTORIZACIÓN ---
 1. TF-IDF (Rápido, basado en palabras exactas)
 2. SentenceTransformer (Semántico, más inteligente, requiere más CPU/GPU)
 
@@ -301,37 +286,50 @@ Para datasets mas grades seleccion de dos modelos entre los 16
       neutro: 133534 (31.8%)
       negativo: 61014 (14.5%)
 
-==========================================================================================
-🤖 MODELOS DISPONIBLES EN SDS
-==========================================================================================
+== 🤖 MODELOS DISPONIBLES EN SDS ==
 
 📌 Selecciona 2 modelos diferentes para comparar
 
-#   Modelo                    Descripción                              Velocidad       Precisión
---------------------------------------------------------------------------------------------------
-1   Logistic Regression       ⚡ Modelo lineal rápido y confiable       ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
-2   Ridge Classifier          ⚡ Regularización L2, versión lineal robusta ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
-3   SGD Classifier            ⚡ Descenso de gradiente estocástico      ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
-4   Multinomial NB            📊 Probabilístico, ideal para conteos de palabras ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno para NLP
-5   Bernoulli NB              📊 Probabilístico para características binarias ⚡⚡⚡ Muy rápido  ⭐⭐ Aceptable
-6   SVM (Linear)              🎯 Máquinas de soporte vectorial (kernel lineal) ⚡⚡ Rápido       ⭐⭐⭐⭐ Excelente
-7   SVM (RBF)                 🎯 Máquinas de soporte vectorial (kernel RBF) ⚡ Más lento     ⭐⭐⭐⭐ Muy bueno
-8   Decision Tree             🌳 Árbol de decisión simple e interpretable ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
-9   Random Forest             🌲 Ensemble de árboles paralelos          ⚡⚡ Rápido       ⭐⭐⭐⭐ Muy bueno
-10  Extra Trees               🌲 Arboles extra aleatorizados (aún más rápido) ⚡⚡ Rápido       ⭐⭐⭐⭐ Muy bueno
-11  Gradient Boosting         🚀 Boosting secuencial, excelente precisión ⚡⚡ Rápido       ⭐⭐⭐⭐⭐ Excelente
-12  AdaBoost                  🚀 Adaptive Boosting, robusto             ⚡⚡ Rápido       ⭐⭐⭐⭐ Muy bueno
-13  XGBoost                   ⚡🚀 Boosting ultra-optimizado, MÁS RÁPIDO ⚡⚡ Rápido       ⭐⭐⭐⭐⭐ Excelente
-14  KNN (k=5)                 🔍 K-Nearest Neighbors, simple            ⚡ Lento en test ⭐⭐⭐ Bueno
-15  LightGBM                  💡 Boosting ultra-ligero, MÁS RÁPIDO que XGBoost ⚡⚡⚡ Muy rápido  ⭐⭐⭐⭐⭐ Excelente
-16  CatBoost                  🐱 Boosting con manejo automático de categorías ⚡⚡ Rápido       ⭐⭐⭐⭐⭐ Excelente
 
-------------------------------------------------------------------------------------------
+1   Logistic Regression⚡ Modelo lineal rápido y confiable       ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
+
+2   Ridge Classifier ⚡ Regularización L2, versión lineal robusta ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
+
+3   SGD Classifier ⚡ Descenso de gradiente estocástico      ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
+
+4   Multinomial NB 📊 Probabilístico, ideal para conteos de palabras ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno para NLP
+
+5   Bernoulli NB 📊 Probabilístico para características binarias ⚡⚡⚡ Muy rápido  ⭐⭐ Aceptable
+
+6   SVM (Linear) 🎯 Máquinas de soporte vectorial (kernel lineal) ⚡⚡ Rápido       ⭐⭐⭐⭐ Excelente
+
+7   SVM (RBF) 🎯 Máquinas de soporte vectorial (kernel RBF) ⚡ Más lento     ⭐⭐⭐⭐ Muy bueno
+
+8   Decision Tree 🌳 Árbol de decisión simple e interpretable ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
+
+9   Random Forest 🌲 Ensemble de árboles paralelos          ⚡⚡ Rápido       ⭐⭐⭐⭐ Muy bueno
+
+10  Extra Trees 🌲 Arboles extra aleatorizados (aún más rápido) ⚡⚡ Rápido       ⭐⭐⭐⭐ Muy bueno
+
+11  Gradient Boosting 🚀 Boosting secuencial, excelente precisión ⚡⚡ Rápido       ⭐⭐⭐⭐⭐ Excelente
+
+12  AdaBoost 🚀 Adaptive Boosting, robusto             ⚡⚡ Rápido       ⭐⭐⭐⭐ Muy bueno
+
+13  XGBoost ⚡🚀 Boosting ultra-optimizado, MÁS RÁPIDO ⚡⚡ Rápido       ⭐⭐⭐⭐⭐ Excelente
+
+14  KNN (k=5) 🔍 K-Nearest Neighbors, simple            ⚡ Lento en test ⭐⭐⭐ Bueno
+
+15  LightGBM 💡 Boosting ultra-ligero, MÁS RÁPIDO que XGBoost ⚡⚡⚡ Muy rápido  ⭐⭐⭐⭐⭐ Excelente
+
+16  CatBoost 🐱 Boosting con manejo automático de categorías ⚡⚡ Rápido       ⭐⭐⭐⭐⭐ Excelente
+
+
+---
 💡 RECOMENDACIONES RÁPIDAS:
    - Para MÁXIMA VELOCIDAD: elige 'Logistic Regression' y 'XGBoost'
    - Para MÁXIMA PRECISIÓN: elige 'Gradient Boosting' y 'XGBoost'
    - BALANCEADO: 'Logistic Regression' y 'Random Forest'
-------------------------------------------------------------------------------------------
+---
 
 🔽 Selecciona el MODELO #1 (1-16): 1
 
@@ -345,9 +343,9 @@ Para datasets mas grades seleccion de dos modelos entre los 16
       ⚡🚀 Boosting ultra-optimizado, MÁS RÁPIDO
       ⚡⚡ Rápido | ⭐⭐⭐⭐⭐ Excelente
 
-==========================================================================================
+====
 ✅ MODELOS SELECCIONADOS
-==========================================================================================
+====
 
 1. Logistic Regression
    📝 ⚡ Modelo lineal rápido y confiable
@@ -362,9 +360,9 @@ Para datasets mas grades seleccion de dos modelos entre los 16
 ⏱️  Tiempo estimado de entrenamiento: ~10 segundos
    (El tiempo real puede variar según el tamaño de tu dataset)
 
-==========================================================================================
+====
 ⚙️  INICIALIZANDO SISTEMA SDS
-==========================================================================================
+====
 
 🔧 Configuración:
    - Lenguaje: Español
@@ -375,9 +373,9 @@ Para datasets mas grades seleccion de dos modelos entre los 16
    - Deep Learning: DESACTIVADO (para velocidad)
    - Modelos a entrenar: ['Logistic Regression', 'XGBoost']
 
-==========================================================================================
+====
 🚀 EJECUTANDO PIPELINE
-==========================================================================================
+====
 📊 Cargando datos...
    Total de registros: 419827
    Columna de texto: 'texto'
@@ -431,7 +429,7 @@ Name: count, dtype: int64
    Counter({np.int64(2): 180223, np.int64(1): 180223, np.int64(0): 180223})
 
 🤖 Entrenando modelos de ML...
-============================================================
+====
    🎯 Modo SELECTIVO: Entrenando 2 modelo(s) específico(s)
       Modelos seleccionados: ['Logistic Regression', 'XGBoost']
    Total de modelos a entrenar: 2
@@ -449,9 +447,9 @@ Name: count, dtype: int64
    - balanced_accuracy: 0.6308
    - matthews_corrcoef: 0.4721
 
-============================================================
+====
 🏆 SELECCIÓN AUTOMÁTICA DEL MEJOR MODELO
-============================================================
+====
 
 ✨ Mejor modelo seleccionado: Logistic Regression
    Criterio de selección: f1_score
@@ -471,9 +469,9 @@ Name: count, dtype: int64
 
 📊 Generando dashboard de resultados...
 
-============================================================
+====
 📋 REPORTE DE CLASIFICACIÓN - MEJOR MODELO
-============================================================
+====
               precision    recall  f1-score   support
 
     negativo     0.5727    0.7500    0.6495     12203
@@ -489,18 +487,18 @@ weighted avg     0.7319    0.7212    0.7242     83966
    ✓ Modelo exportado exitosamente: best_model_Logistic_Regression_20260107_012943.joblib
    ✓ Documentación generada: best_model_Logistic_Regression_20260107_012943_README.txt
 
-==========================================================================================
+===
 🏆 COMPARATIVA DE LOS 2 MODELOS SELECCIONADOS
-==========================================================================================
+===
 
 Modelo                         F1-Score        Balanced Acc    Accuracy
 ---------------------------------------------------------------------------
 Logistic Regression            0.7242          0.7114          0.7212
 XGBoost                        0.6873          0.6308          0.6974
 
-==========================================================================================
+===
 ✨ RESULTADO FINAL
-==========================================================================================
+===
 
 🥇 Mejor modelo: Logistic Regression
 
@@ -514,9 +512,9 @@ XGBoost                        0.6873          0.6308          0.6974
 ⏱️  Tiempo total de ejecución: 17779.29s
 💾 Modelo exportado en: best_model_Logistic_Regression_20260107_012943.joblib
 
-==========================================================================================
+====
 📈 ANÁLISIS DE EFICIENCIA
-==========================================================================================
+====
 ✅ Modelos entrenados: 2 de 14+ disponibles
 ⚡ Tiempo ahorrado: ~120s aproximadamente
 💡 Enfoque: Entrenamiento selectivo y eficiente
