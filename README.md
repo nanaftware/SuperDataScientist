@@ -1,6 +1,8 @@
 # SuperDataScientist
 ensayo que reúne varios modelos para análisis de datos y data science
 
+<img width="1024" height="1024" alt="Gemini_Generated" src="https://github.com/user-attachments/assets/56d38f69-924c-49c6-a334-e1ab19b5ffc0" />
+
 Tiene un instalador automatico con las bibliotecas basicas, y algunas opcionales.
 
 py install_dependencies.py
@@ -279,7 +281,16 @@ Para datasets mas grades seleccion de dos modelos entre los 16
 ⚙️  CONFIGURACIÓN
 ==========================================================================================
 ¿Usar dataset propio (CSV)? (s/N): s
-✅ Cargado:  df_limpio.csv (419827 filas)
+✅ Cargado: df_limpio.csv (419827 filas)
+
+----------------------------------------
+📝 MÉTODO DE VECTORIZACIÓN
+----------------------------------------
+1. TF-IDF (Rápido, basado en palabras exactas)
+2. SentenceTransformer (Semántico, más inteligente, requiere más CPU/GPU)
+
+🔽 Selecciona método (1 o 2): 2
+   ✅ Usando SentenceTransformer (Embeddings semánticos)
 
 📊 Dataset: 419827 filas
    Columna de texto: 'texto'
@@ -291,28 +302,27 @@ Para datasets mas grades seleccion de dos modelos entre los 16
       negativo: 61014 (14.5%)
 
 ==========================================================================================
-🤖 MODELOS DISPONIBLES EN AutoML
+🤖 MODELOS DISPONIBLES EN SDS
 ==========================================================================================
 
 📌 Selecciona 2 modelos diferentes para comparar
 
-#   Modelo                    Descripción                              Velocidad       Precisión    
-
---------------------------------------------------------------------------------------------------  
+#   Modelo                    Descripción                              Velocidad       Precisión
+--------------------------------------------------------------------------------------------------
 1   Logistic Regression       ⚡ Modelo lineal rápido y confiable       ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
 2   Ridge Classifier          ⚡ Regularización L2, versión lineal robusta ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
 3   SGD Classifier            ⚡ Descenso de gradiente estocástico      ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
-4   Multinomial NB            📊 Probabilístico, ideal para conteos de palabras ⚡⚡⚡ Muy rápido   ⭐⭐⭐ Bueno para NLP
-5   Bernoulli NB              📊 Probabilístico para características binarias ⚡⚡⚡ Muy rápido  ⭐ ⭐ Aceptable
-6   SVM (Linear)              🎯 Máquinas de soporte vectorial (kernel lineal) ⚡⚡ Rápido       ⭐ ⭐⭐⭐ Excelente
-7   SVM (RBF)                 🎯 Máquinas de soporte vectorial (kernel RBF) ⚡ Más lento     ⭐⭐⭐ ⭐ Muy bueno
+4   Multinomial NB            📊 Probabilístico, ideal para conteos de palabras ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno para NLP
+5   Bernoulli NB              📊 Probabilístico para características binarias ⚡⚡⚡ Muy rápido  ⭐⭐ Aceptable
+6   SVM (Linear)              🎯 Máquinas de soporte vectorial (kernel lineal) ⚡⚡ Rápido       ⭐⭐⭐⭐ Excelente
+7   SVM (RBF)                 🎯 Máquinas de soporte vectorial (kernel RBF) ⚡ Más lento     ⭐⭐⭐⭐ Muy bueno
 8   Decision Tree             🌳 Árbol de decisión simple e interpretable ⚡⚡⚡ Muy rápido  ⭐⭐⭐ Bueno
 9   Random Forest             🌲 Ensemble de árboles paralelos          ⚡⚡ Rápido       ⭐⭐⭐⭐ Muy bueno
 10  Extra Trees               🌲 Arboles extra aleatorizados (aún más rápido) ⚡⚡ Rápido       ⭐⭐⭐⭐ Muy bueno
 11  Gradient Boosting         🚀 Boosting secuencial, excelente precisión ⚡⚡ Rápido       ⭐⭐⭐⭐⭐ Excelente
 12  AdaBoost                  🚀 Adaptive Boosting, robusto             ⚡⚡ Rápido       ⭐⭐⭐⭐ Muy bueno
-13  XGBoost                   ⚡🚀 Boosting ultra-optimizado, MÁS RÁPIDO ⚡⚡ Rápido       ⭐⭐⭐⭐ ⭐ Excelente
-14  KNN (k=5)                 📍 K-Nearest Neighbors, simple            ⚡ Lento en test ⭐⭐⭐ Bueno
+13  XGBoost                   ⚡🚀 Boosting ultra-optimizado, MÁS RÁPIDO ⚡⚡ Rápido       ⭐⭐⭐⭐⭐ Excelente
+14  KNN (k=5)                 🔍 K-Nearest Neighbors, simple            ⚡ Lento en test ⭐⭐⭐ Bueno
 15  LightGBM                  💡 Boosting ultra-ligero, MÁS RÁPIDO que XGBoost ⚡⚡⚡ Muy rápido  ⭐⭐⭐⭐⭐ Excelente
 16  CatBoost                  🐱 Boosting con manejo automático de categorías ⚡⚡ Rápido       ⭐⭐⭐⭐⭐ Excelente
 
@@ -329,11 +339,11 @@ Para datasets mas grades seleccion de dos modelos entre los 16
       ⚡ Modelo lineal rápido y confiable
       ⚡⚡⚡ Muy rápido | ⭐⭐⭐ Bueno
 
-🔽 Selecciona el MODELO #2 (1-16): 12
+🔽 Selecciona el MODELO #2 (1-16): 13
 
-   ✅ 'AdaBoost' seleccionado
-      🚀 Adaptive Boosting, robusto
-      ⚡⚡ Rápido | ⭐⭐⭐⭐ Muy bueno
+   ✅ 'XGBoost' seleccionado
+      ⚡🚀 Boosting ultra-optimizado, MÁS RÁPIDO
+      ⚡⚡ Rápido | ⭐⭐⭐⭐⭐ Excelente
 
 ==========================================================================================
 ✅ MODELOS SELECCIONADOS
@@ -344,21 +354,26 @@ Para datasets mas grades seleccion de dos modelos entre los 16
    ⚡ Velocidad: ⚡⚡⚡ Muy rápido
    🎯 Precisión: ⭐⭐⭐ Bueno
 
-2. AdaBoost
-   📝 🚀 Adaptive Boosting, robusto
+2. XGBoost
+   📝 ⚡🚀 Boosting ultra-optimizado, MÁS RÁPIDO
    ⚡ Velocidad: ⚡⚡ Rápido
-   🎯 Precisión: ⭐⭐⭐⭐ Muy bueno
+   🎯 Precisión: ⭐⭐⭐⭐⭐ Excelente
+
+⏱️  Tiempo estimado de entrenamiento: ~10 segundos
+   (El tiempo real puede variar según el tamaño de tu dataset)
 
 ==========================================================================================
-⚙️  INICIALIZANDO SISTEMA AUTOML
+⚙️  INICIALIZANDO SISTEMA SDS
 ==========================================================================================
 
 🔧 Configuración:
-   - Lenguaje:  Español
+   - Lenguaje: Español
    - Test size: 20%
-   - Balanceo de clases:  SMOTE
-   - Hiperparameter tuning:  DESACTIVADO (para velocidad)
-   - Deep Learning:  DESACTIVADO (para velocidad)
+   - Balanceo de clases: SMOTE
+   - Vectorización: SENTENCE_TRANSFORMER
+   - Hiperparameter tuning: DESACTIVADO (para velocidad)
+   - Deep Learning: DESACTIVADO (para velocidad)
+   - Modelos a entrenar: ['Logistic Regression', 'XGBoost']
 
 ==========================================================================================
 🚀 EJECUTANDO PIPELINE
@@ -381,4 +396,130 @@ Name: count, dtype: int64
    - Tokenización
    - Eliminación de puntuación
    - Eliminación de stop words
-   - Lematización...
+   - Lematización
+
+   ✓ Preprocesamiento completado
+   Longitud promedio original: 267.9 palabras
+   Longitud promedio procesado: 133.5 palabras
+
+📊 Analizando frecuencia de palabras...
+
+   Clase 'positivo': 312625 palabras únicas
+   Top 10 palabras: [('película', 409784), ('nan', 181300), ('si', 163160), ('historia', 162592), ('cine', 136044), ('ser', 135028), ('bien', 133940), ('mejor', 105250), ('hace', 103013), ('gran', 101998)]
+
+   Clase 'neutro': 242849 palabras únicas
+   Top 10 palabras: [('película', 242106), ('si', 116648), ('nan', 108347), ('bien', 90923), ('historia', 87840), ('ser', 82445), ('ver', 63556), ('aunque', 61621), ('final', 59532), ('tan', 59108)]
+
+   Clase 'negativo': 171253 palabras únicas
+   Top 10 palabras: [('película', 104189), ('si', 62169), ('nan', 47116), ('ser', 33820), ('ver', 32416), ('tan', 30429), ('historia', 29714), ('cine', 27713), ('bien', 25924), ('hace', 23039)]
+
+📦 Preparando conjuntos de datos...
+   Proporción de prueba: 20.0%
+   ⚠️  SentenceTransformers no está disponible. Usando TF-IDF por defecto...
+   Aplicando vectorización TF-IDF...
+   ✓ Conjuntos preparados:
+   Entrenamiento: 335861 muestras
+   Prueba: 83966 muestras
+   Características: 5000 features
+   Clases detectadas: ['negativo', 'neutro', 'positivo']
+
+⚖️  Balanceando clases usando: smote
+   Distribución original:
+   Counter({np.int64(2): 180223, np.int64(1): 106827, np.int64(0): 48811})
+
+   ✓ Clases balanceadas:
+   Counter({np.int64(2): 180223, np.int64(1): 180223, np.int64(0): 180223})
+
+🤖 Entrenando modelos de ML...
+============================================================
+   🎯 Modo SELECTIVO: Entrenando 2 modelo(s) específico(s)
+      Modelos seleccionados: ['Logistic Regression', 'XGBoost']
+   Total de modelos a entrenar: 2
+
+
+🔹 Entrenando Logistic Regression...
+   Metrics:
+   - f1_score: 0.7242
+   - balanced_accuracy: 0.7114
+   - matthews_corrcoef: 0.5415
+
+🔹 Entrenando XGBoost...
+   Metrics:
+   - f1_score: 0.6873
+   - balanced_accuracy: 0.6308
+   - matthews_corrcoef: 0.4721
+
+============================================================
+🏆 SELECCIÓN AUTOMÁTICA DEL MEJOR MODELO
+============================================================
+
+✨ Mejor modelo seleccionado: Logistic Regression
+   Criterio de selección: f1_score
+
+   📊 Métricas del mejor modelo:
+   - accuracy: 0.7212
+   - precision: 0.7319
+   - recall: 0.7212
+   - f1_score: 0.7242
+   - balanced_accuracy: 0.7114
+   - matthews_corrcoef: 0.5415
+   - cohen_kappa: 0.5398
+
+   🥇 Ranking de modelos por f1_score:
+   1. Logistic Regression: 0.7242
+   2. XGBoost: 0.6873
+
+📊 Generando dashboard de resultados...
+
+============================================================
+📋 REPORTE DE CLASIFICACIÓN - MEJOR MODELO
+============================================================
+              precision    recall  f1-score   support
+
+    negativo     0.5727    0.7500    0.6495     12203
+      neutro     0.6110    0.5976    0.6042     26707
+    positivo     0.8466    0.7866    0.8155     45056
+
+    accuracy                         0.7212     83966
+   macro avg     0.6768    0.7114    0.6897     83966
+weighted avg     0.7319    0.7212    0.7242     83966
+
+
+💾 Exportando modelo...
+   ✓ Modelo exportado exitosamente: best_model_Logistic_Regression_20260107_012943.joblib
+   ✓ Documentación generada: best_model_Logistic_Regression_20260107_012943_README.txt
+
+==========================================================================================
+🏆 COMPARATIVA DE LOS 2 MODELOS SELECCIONADOS
+==========================================================================================
+
+Modelo                         F1-Score        Balanced Acc    Accuracy
+---------------------------------------------------------------------------
+Logistic Regression            0.7242          0.7114          0.7212
+XGBoost                        0.6873          0.6308          0.6974
+
+==========================================================================================
+✨ RESULTADO FINAL
+==========================================================================================
+
+🥇 Mejor modelo: Logistic Regression
+
+📊 Métricas del ganador:
+   - F1-Score: 0.7242
+   - Balanced Accuracy: 0.7114
+   - Accuracy: 0.7212
+   - Matthews Corrcoef: 0.5415
+   - Cohen Kappa: 0.5398
+
+⏱️  Tiempo total de ejecución: 17779.29s
+💾 Modelo exportado en: best_model_Logistic_Regression_20260107_012943.joblib
+
+==========================================================================================
+📈 ANÁLISIS DE EFICIENCIA
+==========================================================================================
+✅ Modelos entrenados: 2 de 14+ disponibles
+⚡ Tiempo ahorrado: ~120s aproximadamente
+💡 Enfoque: Entrenamiento selectivo y eficiente
+
+<img width="1366" height="655" alt="Figure_2" src="https://github.com/user-attachments/assets/afc8fa5e-340e-4cf6-94ff-b76e7cd7f983" />
+
