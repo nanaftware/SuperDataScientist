@@ -1,1 +1,65 @@
-(empty)
+# Sensitive files
+.env
+.env.*
+*.pem
+*.key
+secrets.*
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environment directories
+venv/
+env/
+.venv/
+.env/
+virtualenv/
+ENV/
+env.bak/
+venv.bak/
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+*.whl
+
+# IDE settings
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# OS temp files
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.log
+
+# Testing and coverage
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+*.cover
+.cache/
+
+# Other common ignores
+*.log
+.ipynb_checkpoints/
+*.sqlite3
+*.db
+node_modules/
