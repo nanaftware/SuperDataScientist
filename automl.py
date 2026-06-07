@@ -53,6 +53,10 @@ from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              cohen_kappa_score, balanced_accuracy_score)
 from sklearn.utils import resample
 
+# Paralelización
+from joblib import Parallel, delayed, Memory
+import gc
+
 # Imbalance & Advanced Models
 try:
     from imblearn.over_sampling import SMOTE, RandomOverSampler
@@ -200,7 +204,8 @@ class AutoNLP:
     def __init__(self, language='spanish', test_size=0.2, random_state=42, 
                  balance_method=None, custom_metrics=None, use_hyperparameter_tuning=False,
                  use_deep_learning=False, max_sequence_length=100, models_to_train=None,
-                 vectorization_method='tfidf', st_model_name='nomic-embed-text-v1.5/v2 + ML', trust_remote_code=True):
+                 vectorization_method='tfidf', st_model_name='nomic-embed-text-v1.5/v2 + ML', trust_remote_code=True,
+                 n_jobs=-1, cv_folds=5, use_randomized_search=True, n_iter_search=50):
         """
         Constructor con soporte para selección de modelos específicos y método de vectorización
         
@@ -208,6 +213,10 @@ class AutoNLP:
             models_to_train (list, optional): Lista de nombres de modelos específicos a entrenar.
             vectorization_method (str): 'tfidf' o 'sentence_transformer'
             st_model_name (str): Nombre del modelo de SentenceTransformer a usar si corresponde.
+            n_jobs (int): Número de trabajos paralelos (-1 = todos los CPUs).
+            cv_folds (int): Número de folds para cross-validation.
+            use_randomized_search (bool): Usar RandomizedSearchCV en lugar de GridSearchCV.
+            n_iter_search (int): Número de iteraciones para RandomizedSearchCV.
         """
         self.language = language
         self.test_size = test_size
@@ -221,6 +230,14 @@ class AutoNLP:
         self.vectorization_method = vectorization_method
         self.st_model_name = st_model_name
         self.trust_remote_code = trust_remote_code
+        self.n_jobs = n_jobs
+        self.cv_folds = cv_folds
+        self.use_randomized_search = use_randomized_search
+        self.n_iter_search = n_iter_search
+        
+        # Caché para preprocesamiento
+        self.cache_dir = './cache_automl'
+        self.memory = Memory(self.cache_dir, verbose=0)
         
         self.preprocessor = TextPreprocessor(language=language)
         self.vectorizer = None
@@ -240,7 +257,7 @@ class AutoNLP:
         self.saved_figures = []
 
     def run_full_pipeline(self, df, text_column, label_column):
-        """Pipeline completo de entrenamiento"""
+        """Pipeline completo de entrenamiento con optimizaciones"""
         self.load_data(df, text_column, label_column)
         self.preprocess_data()
         self.analyze_word_frequency()
@@ -249,6 +266,13 @@ class AutoNLP:
         self.train_models()
         self.create_dashboard()
         self.export_model()
+        
+        # Limpieza de caché al finalizar
+        try:
+            self.memory.clear(warn=False)
+        except:
+            pass
+        
         return self.best_model, self.best_model_name
 
     def predict(self, texts):
@@ -304,7 +328,7 @@ class AutoNLP:
         print(self.df[label_column].value_counts())
         
     def preprocess_data(self):
-        """Preprocesar todos los textos"""
+        """Preprocesar todos los textos con optimización"""
         print("\n🔧 Preprocesando textos...")
         print("   - Limpieza de texto")
         print("   - Conversión a minúsculas")
@@ -313,6 +337,7 @@ class AutoNLP:
         print("   - Eliminación de stop words")
         print("   - Lematización")
         
+        # Para datasets grandes, usar apply es eficiente y evita problemas de serialización
         self.df['processed_text'] = self.df[self.text_column].apply(
             self.preprocessor.preprocess
         )
@@ -443,16 +468,24 @@ class AutoNLP:
             'Extra Trees': ExtraTreesClassifier(n_estimators=100, random_state=self.random_state),
             'Gradient Boosting': GradientBoostingClassifier(random_state=self.random_state),
             'AdaBoost': AdaBoostClassifier(random_state=self.random_state),
-            'XGBoost': XGBClassifier(random_state=self.random_state, eval_metric='logloss', verbosity=0),
             'KNN (k=5)': KNeighborsClassifier(n_neighbors=5),
         }
         
+        # XGBoost (opcional)
+        try:
+            from xgboost import XGBClassifier
+            all_models['XGBoost'] = XGBClassifier(random_state=self.random_state, eval_metric='logloss', verbosity=0)
+        except ImportError:
+            pass
+        
+        # LightGBM (opcional)
         try:
             from lightgbm import LGBMClassifier
             all_models['LightGBM'] = LGBMClassifier(random_state=self.random_state, verbosity=-1)
         except ImportError:
             pass
         
+        # CatBoost (opcional)
         try:
             from catboost import CatBoostClassifier
             all_models['CatBoost'] = CatBoostClassifier(random_state=self.random_state, verbose=0)
@@ -494,20 +527,24 @@ class AutoNLP:
         return filtered_models
         
     def train_models(self):
-        """Entrenar modelos seleccionados"""
-        print("\n🤖 Entrenando modelos de ML...")
+        """Entrenar modelos seleccionados con optimización de rendimiento"""
+        print("\n🤖 Entrenando modelos de ML (con optimizaciones de rendimiento)...")
         print("="*60)
         
         all_available_models = self._get_all_available_models()
         self.models = self._filter_models_to_train(all_available_models)
         
         print(f"   Total de modelos a entrenar: {len(self.models)}")
+        print(f"   Paralelización: {self.n_jobs} CPUs")
+        print(f"   CV Folds: {self.cv_folds}")
+        print(f"   Búsqueda de hiperparámetros: {'Randomized' if self.use_randomized_search else 'Grid'}")
         print()
         
-        for name, model in self.models.items():
-            print(f"\n🔹 Entrenando {name}...")
+        for idx, (name, model) in enumerate(self.models.items()):
+            print(f"\n🔹 Entrenando {name} ({idx+1}/{len(self.models)})...")
             
             try:
+                # Optimización de hiperparámetros con RandomizedSearch o GridSearch
                 if self.use_hyperparameter_tuning and name in self.get_hyperparameter_grids():
                     model = self.tune_hyperparameters(name, model, self.X_train, self.y_train)
                 else:
@@ -516,6 +553,7 @@ class AutoNLP:
                 y_pred = model.predict(self.X_test)
                 y_pred_proba = model.predict_proba(self.X_test) if hasattr(model, 'predict_proba') else None
                 
+                # Calcular métricas
                 accuracy = accuracy_score(self.y_test, y_pred)
                 precision = precision_score(self.y_test, y_pred, average='weighted', zero_division=0)
                 recall = recall_score(self.y_test, y_pred, average='weighted', zero_division=0)
@@ -523,7 +561,10 @@ class AutoNLP:
                 balanced_acc = balanced_accuracy_score(self.y_test, y_pred)
                 mcc = matthews_corrcoef(self.y_test, y_pred)
                 kappa = cohen_kappa_score(self.y_test, y_pred)
-                cv_scores = cross_val_score(model, self.X_train, self.y_train, cv=5, scoring='accuracy')
+                
+                # Cross-validation optimizado (n_jobs=1 para evitar problemas de serialización)
+                cv_scores = cross_val_score(model, self.X_train, self.y_train, 
+                                           cv=self.cv_folds, scoring='accuracy', n_jobs=1)
                 
                 self.results[name] = {
                     'model': model,
@@ -544,6 +585,11 @@ class AutoNLP:
                 for metric in self.custom_metrics:
                     if metric in self.results[name]:
                         print(f"   - {metric}: {self.results[name][metric]:.4f}")
+                print(f"   - CV Score: {cv_scores.mean():.4f} (+/- {cv_scores.std()*2:.4f})")
+                
+                # Liberar memoria después de cada modelo
+                del y_pred, y_pred_proba
+                gc.collect()
                 
             except Exception as e:
                 print(f"   ⚠️  Error entrenando {name}: {str(e)}")
@@ -552,26 +598,80 @@ class AutoNLP:
         self.select_best_model()
 
     def get_hyperparameter_grids(self):
-        """Grids de hiperparámetros para optimización"""
-        return {
+        """Grids de hiperparámetros para optimización (distribuciones para RandomizedSearch)"""
+        from scipy.stats import uniform, loguniform, randint
+        
+        # Grids tradicionales para GridSearchCV
+        grids = {
             'Logistic Regression': {'C': [0.1, 1, 10], 'penalty': ['l2']},
             'Random Forest': {'n_estimators': [100, 200], 'max_depth': [10, 20, None]},
             'SVM (Linear)': {'C': [0.1, 1, 10]},
             'XGBoost': {'n_estimators': [100, 200], 'learning_rate': [0.01, 0.1]},
             'Multinomial NB': {'alpha': [0.1, 0.5, 1.0]}
         }
+        
+        # Distribuciones para RandomizedSearchCV (más eficiente)
+        param_distributions = {
+            'Logistic Regression': {
+                'C': loguniform(1e-3, 1e3),
+                'penalty': ['l2']
+            },
+            'Random Forest': {
+                'n_estimators': randint(50, 500),
+                'max_depth': randint(5, 50),
+                'min_samples_split': randint(2, 20),
+                'min_samples_leaf': randint(1, 10)
+            },
+            'SVM (Linear)': {
+                'C': loguniform(1e-3, 1e3)
+            },
+            'XGBoost': {
+                'n_estimators': randint(50, 500),
+                'learning_rate': loguniform(0.01, 0.3),
+                'max_depth': randint(3, 15),
+                'subsample': uniform(0.6, 0.4)
+            },
+            'Multinomial NB': {
+                'alpha': loguniform(1e-3, 1e2)
+            }
+        }
+        
+        return grids if not self.use_randomized_search else param_distributions
 
     def tune_hyperparameters(self, name, model, X, y):
-        """Optimizar hiperparámetros"""
-        grid = self.get_hyperparameter_grids().get(name)
-        if not grid:
+        """Optimizar hiperparámetros con GridSearchCV o RandomizedSearchCV"""
+        param_grid = self.get_hyperparameter_grids().get(name)
+        if not param_grid:
+            print(f"   ℹ️  Sin optimización para {name}")
             return model
             
         print(f"   ⚙️  Optimizando {name}...")
-        grid_search = GridSearchCV(model, grid, cv=3, scoring='f1_weighted', n_jobs=-1)
-        grid_search.fit(X, y)
-        print(f"      Best params: {grid_search.best_params_}")
-        return grid_search.best_estimator_
+        print(f"      Método: {'RandomizedSearchCV' if self.use_randomized_search else 'GridSearchCV'}")
+        print(f"      Iteraciones/Folds: {self.n_iter_search if self.use_randomized_search else 'N/A'} / {self.cv_folds}")
+        
+        if self.use_randomized_search:
+            search = RandomizedSearchCV(
+                model, param_grid, 
+                n_iter=self.n_iter_search,
+                cv=self.cv_folds, 
+                scoring='f1_weighted', 
+                n_jobs=self.n_jobs,
+                random_state=self.random_state,
+                verbose=0
+            )
+        else:
+            search = GridSearchCV(
+                model, param_grid, 
+                cv=self.cv_folds, 
+                scoring='f1_weighted', 
+                n_jobs=self.n_jobs,
+                verbose=0
+            )
+        
+        search.fit(X, y)
+        print(f"      Best params: {search.best_params_}")
+        print(f"      Best CV score: {search.best_score_:.4f}")
+        return search.best_estimator_
     
     def select_best_model(self):
         """Seleccionar el mejor modelo"""
